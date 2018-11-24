@@ -859,22 +859,6 @@ altcp_tls_create_config(int is_server, uint8_t cert_count, uint8_t pkey_count, i
     &conf->ticket_ctx);
 #endif
 
-#if defined(MBEDTLS_SSL_SESSION_TICKETS) && ALTCP_MBEDTLS_USE_SESSION_TICKETS
-  mbedtls_ssl_ticket_init(&conf->ticket_ctx);
-
-  ret = mbedtls_ssl_ticket_setup(&conf->ticket_ctx, mbedtls_ctr_drbg_random, &conf->ctr_drbg,
-    ALTCP_MBEDTLS_SESSION_TICKET_CIPHER, ALTCP_MBEDTLS_SESSION_TICKET_TIMEOUT_SECONDS);
-  if (ret) {
-    LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("mbedtls_ssl_ticket_setup failed: %d\n", ret));
-    altcp_mbedtls_free_config(conf);
-    return NULL;
-  }
-
-  mbedtls_ssl_conf_session_tickets_cb(&conf->conf, mbedtls_ssl_ticket_write, mbedtls_ssl_ticket_parse,
-    &conf->ticket_ctx);
-#endif
-
-
   return conf;
 }
 
@@ -954,7 +938,7 @@ altcp_tls_create_config_server_privkey_cert(const u8_t *privkey, size_t privkey_
 
   if (altcp_tls_config_server_add_privkey_cert(conf, privkey, privkey_len,
     privkey_pass, privkey_pass_len, cert, cert_len) != ERR_OK) {
-    altcp_tls_free_config(conf);
+    altcp_mbedtls_free_config(conf);
     return NULL;
   }
 
