@@ -40,8 +40,8 @@
  *   track of the ratio of application data and TLS overhead would be too much.
  *
  * Mandatory security-related configuration:
- * - ensure to add at least one strong entropy source to your mbedtls port (implement
- *   mbedtls_platform_entropy_poll or mbedtls_hardware_poll providing strong entropy)
+ * - define ALTCP_MBEDTLS_RNG_FN to a custom GOOD rng function returning 0 on success:
+ *   int my_rng_fn(void *ctx, unsigned char *buffer , size_t len)
  * - define ALTCP_MBEDTLS_ENTROPY_PTR and ALTCP_MBEDTLS_ENTROPY_LEN to something providing
  *   GOOD custom entropy
  *
