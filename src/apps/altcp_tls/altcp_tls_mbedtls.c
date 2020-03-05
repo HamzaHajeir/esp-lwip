@@ -718,7 +718,7 @@ altcp_mbedtls_debug(void *ctx, int level, const char *file, int line, const char
 #endif
 
 static err_t
-altcp_mbedtls_ref_entropy()
+altcp_mbedtls_ref_entropy(void)
 {
   LWIP_ASSERT_CORE_LOCKED();
 
@@ -748,13 +748,12 @@ altcp_mbedtls_ref_entropy()
   else {
     altcp_tls_entropy_rng->ref++;
   }
+  SYS_ARCH_UNPROTECT(old_level);
   return ERR_OK;
 }
 
-
-
 static void
-altcp_mbedtls_unref_entropy()
+altcp_mbedtls_unref_entropy(void)
 {
   LWIP_ASSERT_CORE_LOCKED();
 
