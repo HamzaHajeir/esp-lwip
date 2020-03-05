@@ -718,8 +718,8 @@ altcp_mbedtls_debug(void *ctx, int level, const char *file, int line, const char
 static err_t
 altcp_mbedtls_ref_entropy()
 {
-  SYS_ARCH_DECL_PROTECT(old_level);
-  SYS_ARCH_PROTECT(old_level);
+  LWIP_ASSERT_CORE_LOCKED();
+
   if (!altcp_tls_entropy_rng) {
     altcp_tls_entropy_rng = (struct altcp_tls_entropy_rng *)altcp_mbedtls_alloc_config(sizeof(struct altcp_tls_entropy_rng));
     if (altcp_tls_entropy_rng) {
@@ -737,18 +737,15 @@ altcp_mbedtls_ref_entropy()
         mbedtls_entropy_free(&altcp_tls_entropy_rng->entropy);
         altcp_mbedtls_free_config(altcp_tls_entropy_rng);
         altcp_tls_entropy_rng = NULL;
-        SYS_ARCH_UNPROTECT(old_level);
         return ERR_ARG;
       }
-    }
-    else {
-      SYS_ARCH_UNPROTECT(old_level);
+    } else {
       return ERR_MEM;
     }
   }
-  else
+  else {
     altcp_tls_entropy_rng->ref++;
-  SYS_ARCH_UNPROTECT(old_level);
+  }
   return ERR_OK;
 }
 
@@ -757,11 +754,11 @@ altcp_mbedtls_ref_entropy()
 static void
 altcp_mbedtls_unref_entropy()
 {
-  SYS_ARCH_DECL_PROTECT(old_level);
-  SYS_ARCH_PROTECT(old_level);
-  if (altcp_tls_entropy_rng && altcp_tls_entropy_rng->ref)
+  LWIP_ASSERT_CORE_LOCKED();
+
+  if (altcp_tls_entropy_rng && altcp_tls_entropy_rng->ref) {
       altcp_tls_entropy_rng->ref--;
-  SYS_ARCH_UNPROTECT(old_level);
+  }
 }
 
 /** Create new TLS configuration
@@ -1040,15 +1037,14 @@ altcp_tls_free_config(struct altcp_tls_config *conf)
 void
 altcp_tls_free_entropy(void)
 {
-  SYS_ARCH_DECL_PROTECT(old_level);
-  SYS_ARCH_PROTECT(old_level);
+  LWIP_ASSERT_CORE_LOCKED();
+
   if (altcp_tls_entropy_rng && altcp_tls_entropy_rng->ref == 0) {
     mbedtls_ctr_drbg_free(&altcp_tls_entropy_rng->ctr_drbg);
     mbedtls_entropy_free(&altcp_tls_entropy_rng->entropy);
     altcp_mbedtls_free_config(altcp_tls_entropy_rng);
     altcp_tls_entropy_rng = NULL;
   }
-  SYS_ARCH_UNPROTECT(old_level);
 }
 
 /* "virtual" functions */
