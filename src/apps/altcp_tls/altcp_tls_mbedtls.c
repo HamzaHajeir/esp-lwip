@@ -753,7 +753,6 @@ altcp_mbedtls_ref_entropy(void)
   else {
     altcp_tls_entropy_rng->ref++;
   }
-  SYS_ARCH_UNPROTECT(old_level);
   return ERR_OK;
 }
 
