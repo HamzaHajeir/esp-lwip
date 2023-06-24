@@ -946,7 +946,7 @@ altcp_tls_create_config_server_privkey_cert(const u8_t *privkey, size_t privkey_
 
   if (altcp_tls_config_server_add_privkey_cert(conf, privkey, privkey_len,
     privkey_pass, privkey_pass_len, cert, cert_len) != ERR_OK) {
-    altcp_mbedtls_free_config(conf);
+    altcp_tls_free_config(conf);
     return NULL;
   }
 
