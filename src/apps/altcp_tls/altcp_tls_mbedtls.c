@@ -298,6 +298,7 @@ altcp_mbedtls_lower_recv_process(struct altcp_pcb *conn, altcp_mbedtls_state_t *
 
       if (altcp_close(conn) != ERR_OK) {
         altcp_abort(conn);
+        return ERR_ABRT;
       }
       return ERR_OK;
     }
@@ -1143,8 +1144,9 @@ altcp_mbedtls_listen(struct altcp_pcb *conn, u8_t backlog, err_t *err)
 static void
 altcp_mbedtls_abort(struct altcp_pcb *conn)
 {
-  if (conn != NULL) {
+  if (conn != NULL && conn->inner_conn != NULL) {
     altcp_abort(conn->inner_conn);
+    conn->inner_conn = NULL;
   }
 }
 
