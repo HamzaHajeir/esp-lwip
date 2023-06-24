@@ -84,6 +84,7 @@
 #include "mbedtls/ssl_internal.h" /* to call mbedtls_flush_output after ERR_MEM */
 
 #include <string.h>
+#include <stdbool.h>
 
 #ifndef ALTCP_MBEDTLS_ENTROPY_PTR
 #define ALTCP_MBEDTLS_ENTROPY_PTR   NULL
@@ -109,6 +110,7 @@ struct altcp_tls_config {
   uint8_t pkey_count;
   uint8_t pkey_max;
   mbedtls_x509_crt *ca;
+  bool is_server;
 #if defined(MBEDTLS_SSL_CACHE_C) && ALTCP_MBEDTLS_USE_SESSION_CACHE
   /** Inter-connection cache for fast connection startup */
   struct mbedtls_ssl_cache_context cache;
@@ -863,6 +865,7 @@ altcp_tls_create_config(int is_server, uint8_t cert_count, uint8_t pkey_count, i
     &conf->ticket_ctx);
 #endif
 
+  conf->is_server = is_server;
   return conf;
 }
 
@@ -1331,6 +1334,11 @@ altcp_mbedtls_dealloc(struct altcp_pcb *conn)
         /* free leftover (unhandled) rx pbufs */
         pbuf_free(state->rx);
         state->rx = NULL;
+      }
+      /* Only free if it's a client connection. Server connections share the same altcp_tls_config*/
+      struct altcp_tls_config *conf = (struct altcp_tls_config *) state->conf;
+      if (!conf->is_server) {
+        altcp_tls_free_config(conf);
       }
       altcp_mbedtls_free(state->conf, state);
       conn->state = NULL;
