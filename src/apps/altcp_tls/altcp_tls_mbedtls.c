@@ -380,6 +380,10 @@ altcp_mbedtls_handle_rx_appldata(struct altcp_pcb *conn, altcp_mbedtls_state_t *
     return ERR_VAL;
   }
   do {
+    /* Early exit, no thing can be fetched by mbedtls_ssl_read() call */
+    if (state->rx == NULL) {
+      return ERR_OK;
+    }
     /* allocate a full-sized unchained PBUF_POOL: this is for RX! */
     struct pbuf *buf = pbuf_alloc(PBUF_RAW, PBUF_POOL_BUFSIZE, PBUF_POOL);
     if (buf == NULL) {
@@ -388,6 +392,7 @@ altcp_mbedtls_handle_rx_appldata(struct altcp_pcb *conn, altcp_mbedtls_state_t *
       return ERR_OK;
     }
 
+    buf->flags = state->rx->flags;
     /* decrypt application data, this pulls encrypted RX data off state->rx pbuf chain */
     ret = mbedtls_ssl_read(&state->ssl_context, (unsigned char *)buf->payload, PBUF_POOL_BUFSIZE);
     if (ret < 0) {
