@@ -357,7 +357,7 @@ altcp_mbedtls_pass_rx_data(struct altcp_pcb *conn, altcp_mbedtls_state_t *state)
     } else {
       pbuf_free(buf);
     }
-  } else if ((state->flags & ALTCP_MBEDTLS_FLAGS_RX_CLOSE_QUEUED) ==
+  } else if ((state->flags & (ALTCP_MBEDTLS_FLAGS_RX_CLOSE_QUEUED | ALTCP_MBEDTLS_FLAGS_RX_CLOSED)) ==
              ALTCP_MBEDTLS_FLAGS_RX_CLOSE_QUEUED) {
     state->flags |= ALTCP_MBEDTLS_FLAGS_RX_CLOSED;
     if (conn->recv) {
