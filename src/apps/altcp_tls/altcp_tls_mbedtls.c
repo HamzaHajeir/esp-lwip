@@ -401,11 +401,6 @@ altcp_mbedtls_handle_rx_appldata(struct altcp_pcb *conn, altcp_mbedtls_state_t *
       return ERR_OK;
     }
 
-    /* Copy TCP flags to the allocated buffer */
-    if (state->rx != NULL) {
-      buf->flags = state->rx->flags;
-    }
-
     /* decrypt application data, this pulls encrypted RX data off state->rx pbuf chain */
     ret = mbedtls_ssl_read(&state->ssl_context, (unsigned char *)buf->payload, PBUF_POOL_BUFSIZE);
     if (ret < 0) {
@@ -467,7 +462,7 @@ altcp_mbedtls_handle_rx_appldata(struct altcp_pcb *conn, altcp_mbedtls_state_t *
         return ERR_OK;
       }
     }
-  } while (ret > 0 && state->rx != NULL);
+  } while (ret > 0);
   return ERR_OK;
 }
 
