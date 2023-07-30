@@ -53,6 +53,7 @@
 
 #include "lwip/opt.h"
 #include "lwip/sys.h"
+#include "esp_heap_caps.h"
 
 #if LWIP_ALTCP /* don't build if not configured for use in lwipopts.h */
 
@@ -272,18 +273,25 @@ altcp_mbedtls_lower_recv(void *arg, struct altcp_pcb *inner_conn, struct pbuf *p
   return altcp_mbedtls_lower_recv_process(conn, state);
 }
 
+static u32_t get_heap() {
+  return heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
+}
 static err_t
 altcp_mbedtls_lower_recv_process(struct altcp_pcb *conn, altcp_mbedtls_state_t *state)
 {
+  LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("altcp_mbedtls_lower_recv_process\n"));
   if (!(state->flags & ALTCP_MBEDTLS_FLAGS_HANDSHAKE_DONE)) {
     /* handle connection setup (handshake not done) */
     bool mbedtls_is_ssl_handshake_over = false;
     int ret;
     do {
+      LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("--> mbedtls_ssl_handshake_step state %d heap %u -->\n", state->ssl_context.state, get_heap()));
       ret = mbedtls_ssl_handshake_step(&state->ssl_context);
       mbedtls_is_ssl_handshake_over = (state->ssl_context.state == MBEDTLS_SSL_HANDSHAKE_OVER);
+      LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("<-- mbedtls_ssl_handshake_step state %d ret %d heap %u <--\n", state->ssl_context.state, ret, get_heap()));
     }
     while (!mbedtls_is_ssl_handshake_over && !ret);
+    LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("mbedtls_ssl_handshake_step loop exit ret = %d\n", ret));
     altcp_output(conn->inner_conn);
     if (state->bio_bytes_read) {
       /* acknowledge all bytes read */
@@ -772,6 +780,7 @@ altcp_mbedtls_ref_entropy(void)
   else {
     altcp_tls_entropy_rng->ref++;
   }
+  LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("ref_entropy NOW %d\n",altcp_tls_entropy_rng->ref));
   return ERR_OK;
 }
 
@@ -782,6 +791,7 @@ altcp_mbedtls_unref_entropy(void)
 
   if (altcp_tls_entropy_rng && altcp_tls_entropy_rng->ref) {
       altcp_tls_entropy_rng->ref--;
+    LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("unref_entropy NOW %d\n",altcp_tls_entropy_rng->ref));
   }
 }
 
@@ -1059,6 +1069,7 @@ altcp_tls_configure_alpn_protocols(struct altcp_tls_config *conf, const char **p
 void
 altcp_tls_free_config(struct altcp_tls_config *conf)
 {
+  LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("altcp_tls_free_config(%p)\n", conf));
   if (conf->pkey) {
     mbedtls_pk_free(conf->pkey);
     conf->pkey = NULL;
@@ -1182,6 +1193,7 @@ altcp_mbedtls_close(struct altcp_pcb *conn)
     err_t err;
     struct tcp_pcb *pcb = (struct tcp_pcb *) conn->inner_conn->state;
     enum tcp_state tcpconn_state = pcb->state;
+    LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("tcpconn_state=%d\n", tcpconn_state));
 
     altcp_poll_fn oldpoll = inner_conn->poll;
     altcp_mbedtls_remove_callbacks(conn->inner_conn);
@@ -1367,6 +1379,7 @@ static void
 altcp_mbedtls_dealloc(struct altcp_pcb *conn)
 {
   /* clean up and free tls state */
+  LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("altcp_mbedtls_dealloc(%p)\n", conn));
   if (conn) {
     altcp_mbedtls_state_t *state = (altcp_mbedtls_state_t *)conn->state;
     if (state) {

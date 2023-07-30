@@ -175,12 +175,14 @@ altcp_mbedtls_alloc(void *conf)
   if (ret != NULL) {
     ret->conf = conf;
   }
+  LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("altcp_mbedtls_alloc(%p)-->%p\n", conf, ret));
   return ret;
 }
 
 void
 altcp_mbedtls_free(void *conf, altcp_mbedtls_state_t *state)
 {
+  LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("altcp_mbedtls_free(%p,%p)\n", conf, state));
   LWIP_UNUSED_ARG(conf);
   LWIP_ASSERT("state != NULL", state != NULL);
   mem_free(state);
@@ -196,12 +198,14 @@ altcp_mbedtls_alloc_config(size_t size)
     return NULL;
   }
   ret = (altcp_mbedtls_state_t *)mem_calloc(1, (mem_size_t)size);
+  LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("altcp_mbedtls_alloc_config(%d)-->%p\n", size, ret));
   return ret;
 }
 
 void
 altcp_mbedtls_free_config(void *item)
 {
+  LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("altcp_mbedtls_free_config(%p)\n", item));
   LWIP_ASSERT("item != NULL", item != NULL);
   mem_free(item);
 }
