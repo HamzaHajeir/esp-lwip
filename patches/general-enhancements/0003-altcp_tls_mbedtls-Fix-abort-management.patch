@@ -1,0 +1,36 @@
+From 117d42f90b0ffa59fe875c168b4068f8d7defe00 Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Sat, 24 Jun 2023 20:33:01 +0300
+Subject: [PATCH 03/11] altcp_tls_mbedtls: Fix abort management. Fix to return
+ ERR_ABRT on altcp_abort(). Add check to altcp_mbedtls_abort().
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 5b2a1ba5..748ae614 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -298,6 +298,7 @@ altcp_mbedtls_lower_recv_process(struct altcp_pcb *conn, altcp_mbedtls_state_t *
+ 
+       if (altcp_close(conn) != ERR_OK) {
+         altcp_abort(conn);
++        return ERR_ABRT;
+       }
+       return ERR_OK;
+     }
+@@ -1143,8 +1144,9 @@ altcp_mbedtls_listen(struct altcp_pcb *conn, u8_t backlog, err_t *err)
+ static void
+ altcp_mbedtls_abort(struct altcp_pcb *conn)
+ {
+-  if (conn != NULL) {
++  if (conn != NULL && conn->inner_conn != NULL) {
+     altcp_abort(conn->inner_conn);
++    conn->inner_conn = NULL;
+   }
+ }
+ 
+-- 
+2.39.2.windows.1
+

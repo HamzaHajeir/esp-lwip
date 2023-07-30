@@ -1,0 +1,30 @@
+From 42297b7a5a86a3b8b40c6a878fbc138b4f75d718 Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Sat, 24 Jun 2023 20:37:44 +0300
+Subject: [PATCH 04/11] altcp_tls_mbedtls: Free SSL cache and session tickets
+ on tls_free_config()
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 748ae614..d5564931 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -1060,6 +1060,12 @@ altcp_tls_free_config(struct altcp_tls_config *conf)
+   mbedtls_ssl_config_free(&conf->conf);
+   altcp_mbedtls_free_config(conf);
+   altcp_mbedtls_unref_entropy();
++#if defined(MBEDTLS_SSL_CACHE_C) && ALTCP_MBEDTLS_USE_SESSION_CACHE
++  mbedtls_ssl_cache_free(&conf->cache);
++#endif
++#if defined(MBEDTLS_SSL_SESSION_TICKETS) && ALTCP_MBEDTLS_USE_SESSION_TICKETS
++  mbedtls_ssl_ticket_free(&conf->ticket_ctx);
++#endif
+ }
+ 
+ void
+-- 
+2.39.2.windows.1
+

@@ -1,0 +1,37 @@
+From 13e7962930f8299eb4b644ed81946fce0b6558e3 Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Tue, 27 Jun 2023 15:22:29 +0300
+Subject: [PATCH] altcp_tls_mbedtls: Copy received TCP flags
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 9531b4ca..7ab683bc 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -401,6 +401,11 @@ altcp_mbedtls_handle_rx_appldata(struct altcp_pcb *conn, altcp_mbedtls_state_t *
+       return ERR_OK;
+     }
+ 
++    /* Copy TCP flags to the allocated buffer */
++    if (state->rx != NULL) {
++      buf->flags = state->rx->flags;
++    }
++
+     /* decrypt application data, this pulls encrypted RX data off state->rx pbuf chain */
+     ret = mbedtls_ssl_read(&state->ssl_context, (unsigned char *)buf->payload, PBUF_POOL_BUFSIZE);
+     if (ret < 0) {
+@@ -462,7 +467,7 @@ altcp_mbedtls_handle_rx_appldata(struct altcp_pcb *conn, altcp_mbedtls_state_t *
+         return ERR_OK;
+       }
+     }
+-  } while (ret > 0);
++  } while (ret > 0 && (state->rx != NULL || state->rx_app != NULL));
+   return ERR_OK;
+ }
+ 
+-- 
+2.39.2.windows.1
+

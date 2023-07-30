@@ -1,0 +1,28 @@
+From ba8c9d01afb9546c4143289bf3519ce663e671d6 Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Tue, 27 Jun 2023 15:05:24 +0300
+Subject: [PATCH 5/5] altcp_tls_mbedtls: free rx_app on dealloc
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 5f89289a..23171a32 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -1372,6 +1372,11 @@ altcp_mbedtls_dealloc(struct altcp_pcb *conn)
+         pbuf_free(state->rx);
+         state->rx = NULL;
+       }
++      if (state->rx_app) {
++        /* as above */
++        pbuf_free(state->rx_app);
++        state->rx = NULL;
++      }
+       /* Only free if it's a client connection. Server connections share the same altcp_tls_config*/
+       struct altcp_tls_config *conf = (struct altcp_tls_config *) state->conf;
+       if (!conf->is_server) {
+-- 
+2.39.2.windows.1
+

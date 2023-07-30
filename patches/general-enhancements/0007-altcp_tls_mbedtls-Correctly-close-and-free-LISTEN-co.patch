@@ -1,0 +1,68 @@
+From 94586c105849b847b55131810c373b550528b4b1 Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Tue, 27 Jun 2023 14:56:57 +0300
+Subject: [PATCH 3/5] altcp_tls_mbedtls: Correctly close and free LISTEN
+ connections
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 50d6a505..b516d41d 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -60,6 +60,7 @@
+ 
+ #if LWIP_ALTCP_TLS && LWIP_ALTCP_TLS_MBEDTLS
+ 
++#include "lwip/tcp.h" /* To check the tcp pcb state */
+ #include "lwip/altcp.h"
+ #include "lwip/altcp_tls.h"
+ #include "lwip/priv/altcp_priv.h"
+@@ -601,7 +602,7 @@ altcp_mbedtls_remove_callbacks(struct altcp_pcb *inner_conn)
+   altcp_recv(inner_conn, NULL);
+   altcp_sent(inner_conn, NULL);
+   altcp_err(inner_conn, NULL);
+-  altcp_poll(inner_conn, NULL, inner_conn->pollinterval);
++  /* tcp_poll is set externally with tcp_state awareness (must be != LISTEN) */
+ }
+ 
+ static void
+@@ -1169,16 +1170,32 @@ altcp_mbedtls_close(struct altcp_pcb *conn)
+   inner_conn = conn->inner_conn;
+   if (inner_conn) {
+     err_t err;
++    struct tcp_pcb *pcb = (struct tcp_pcb *) conn->inner_conn->state;
++    enum tcp_state tcpconn_state = pcb->state;
++
+     altcp_poll_fn oldpoll = inner_conn->poll;
+     altcp_mbedtls_remove_callbacks(conn->inner_conn);
++    /* Remove poll callback for non-listeners */
++    if (tcpconn_state != LISTEN) {
++      /* poll callback is not included in the above */
++      altcp_poll(inner_conn, NULL, inner_conn->pollinterval);
++    }
+     err = altcp_close(conn->inner_conn);
+     if (err != ERR_OK) {
+       /* not closed, set up all callbacks again */
+       altcp_mbedtls_setup_callbacks(conn, inner_conn);
+-      /* poll callback is not included in the above */
+       altcp_poll(inner_conn, oldpoll, inner_conn->pollinterval);
+       return err;
+     }
++
++    if (tcpconn_state == LISTEN) {
++        /* Free the configuration held by the listener server that's going to be closed */
++        LWIP_DEBUGF(ALTCP_MBEDTLS_DEBUG, ("Freeing the listening pcb %p conn %p\n", pcb, conn));
++        altcp_mbedtls_state_t *state = (altcp_mbedtls_state_t *) conn->state;
++        if (state != NULL && state->conf != NULL && conn->accept != NULL) {
++          altcp_tls_free_config(state->conf);
++      }
++    }
+     conn->inner_conn = NULL;
+   }
+   altcp_free(conn);
+-- 
+2.39.2.windows.1
+
