@@ -2252,6 +2252,14 @@
 #define MIB2_STATS                      0
 #endif
 
+/**
+ * IP_NAPT_STATS==1: Stats for IP NAPT.
+ */
+#if !defined IP_NAPT_STATS || defined __DOXYGEN__
+#define IP_NAPT_STATS                   (IP_NAPT)
+#endif
+
+
 #else
 
 #define LINK_STATS                      0
@@ -2272,6 +2280,7 @@
 #define MLD6_STATS                      0
 #define ND6_STATS                       0
 #define MIB2_STATS                      0
+#define IP_NAPT_STATS                   0
 
 #endif /* LWIP_STATS */
 /**
@@ -2393,6 +2402,14 @@
  */
 #if !defined LWIP_IPV6 || defined __DOXYGEN__
 #define LWIP_IPV6                       0
+#endif
+
+/**
+ * when LWIP_FORCE_ROUTER_FORWARDING is enbaled in lwip, the router flag in NA packet will always
+ * set to 1, otherwise, never set router flag for NA packets.
+ */
+#if !defined LWIP_FORCE_ROUTER_FORWARDING || defined __DOXYGEN__
+#define LWIP_FORCE_ROUTER_FORWARDING 0
 #endif
 
 /**
