@@ -1,0 +1,33 @@
+From 687ce2c8809ca12d84a94feadbdf0dbda97955b3 Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Sat, 24 Jun 2023 20:39:25 +0300
+Subject: [PATCH 05/13] altcp_tls_mbedtls: Mark freed members to prevent double
+ free.
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 24b1d99c..baef6adf 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -1058,12 +1058,15 @@ altcp_tls_free_config(struct altcp_tls_config *conf)
+ {
+   if (conf->pkey) {
+     mbedtls_pk_free(conf->pkey);
++    conf->pkey = NULL;
+   }
+   if (conf->cert) {
+     mbedtls_x509_crt_free(conf->cert);
++    conf->cert = NULL;
+   }
+   if (conf->ca) {
+     mbedtls_x509_crt_free(conf->ca);
++    conf->ca = NULL;
+   }
+   mbedtls_ssl_config_free(&conf->conf);
+   altcp_mbedtls_free_config(conf);
+-- 
+2.45.2.windows.1
+

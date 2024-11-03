@@ -1,0 +1,82 @@
+From cf608c9653d7323e2034a5fb98d4a359bdc7e6e2 Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Thu, 27 Jul 2023 14:49:33 +0300
+Subject: [PATCH 11/13] altcp_tls_mbedtls: Manage write apiflags
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c         | 11 ++++++++---
+ src/apps/altcp_tls/altcp_tls_mbedtls_structs.h |  2 ++
+ 2 files changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 5d8d9605..60d4ed22 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -194,6 +194,7 @@ altcp_mbedtls_lower_connected(void *arg, struct altcp_pcb *inner_conn, err_t err
+     state = (altcp_mbedtls_state_t *)conn->state;
+     /* ensure overhead value is valid before first write */
+     state->overhead_bytes_adjust = 0;
++    state->tx_len = 0;
+     return altcp_mbedtls_lower_recv_process(conn, state);
+   }
+   return ERR_VAL;
+@@ -1267,8 +1268,6 @@ altcp_mbedtls_write(struct altcp_pcb *conn, const void *dataptr, u16_t len, u8_t
+   int ret;
+   altcp_mbedtls_state_t *state;
+ 
+-  LWIP_UNUSED_ARG(apiflags);
+-
+   if (conn == NULL) {
+     return ERR_VAL;
+   }
+@@ -1292,6 +1291,8 @@ altcp_mbedtls_write(struct altcp_pcb *conn, const void *dataptr, u16_t len, u8_t
+       return ERR_MEM;
+     }
+   }
++  state->tx_len = len;
++  state->apiflags = apiflags;
+   ret = mbedtls_ssl_write(&state->ssl_context, (const unsigned char *)dataptr, len);
+   /* try to send data... */
+   altcp_output(conn->inner_conn);
+@@ -1326,7 +1327,6 @@ altcp_mbedtls_bio_send(void *ctx, const unsigned char *dataptr, size_t size)
+   altcp_mbedtls_state_t *state;
+   int written = 0;
+   size_t size_left = size;
+-  u8_t apiflags = TCP_WRITE_FLAG_COPY;
+ 
+   LWIP_ASSERT("conn != NULL", conn != NULL);
+   if ((conn == NULL) || (conn->inner_conn == NULL)) {
+@@ -1335,12 +1335,17 @@ altcp_mbedtls_bio_send(void *ctx, const unsigned char *dataptr, size_t size)
+   state = (altcp_mbedtls_state_t *)conn->state;
+   LWIP_ASSERT("state != NULL", state != NULL);
+ 
++  u8_t apiflags = TCP_WRITE_FLAG_COPY | state->apiflags;
+   while (size_left) {
+     u16_t write_len = (u16_t)LWIP_MIN(size_left, 0xFFFF);
++    if (state->tx_len - write_len > 0) {
++      apiflags |= TCP_WRITE_FLAG_MORE;
++    }
+     err_t err = altcp_write(conn->inner_conn, (const void *)dataptr, write_len, apiflags);
+     if (err == ERR_OK) {
+       written += write_len;
+       size_left -= write_len;
++      state->tx_len -= write_len;
+       state->overhead_bytes_adjust += write_len;
+     } else if (err == ERR_MEM) {
+       if (written) {
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls_structs.h b/src/apps/altcp_tls/altcp_tls_mbedtls_structs.h
+index 2ad2b60a..9d36f9fc 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls_structs.h
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls_structs.h
+@@ -68,6 +68,8 @@ typedef struct altcp_mbedtls_state_s {
+   struct pbuf *rx;
+   struct pbuf *rx_app;
+   u8_t flags;
++  u8_t apiflags;
++  u16_t tx_len;
+   int rx_passed_unrecved;
+   int bio_bytes_read;
+   int bio_bytes_appl;
+-- 
+2.45.2.windows.1
+
