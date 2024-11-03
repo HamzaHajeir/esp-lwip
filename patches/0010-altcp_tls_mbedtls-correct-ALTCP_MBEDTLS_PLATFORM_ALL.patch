@@ -1,0 +1,28 @@
+From 97deaa55d26888c0992c0169258c3200eb6d4b5d Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Sat, 17 Jun 2023 20:29:40 +0300
+Subject: [PATCH 10/13] altcp_tls_mbedtls: correct ALTCP_MBEDTLS_PLATFORM_ALLOC
+ configuration
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls_mem.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls_mem.c b/src/apps/altcp_tls/altcp_tls_mbedtls_mem.c
+index 9bc7f465..71e77cd5 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls_mem.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls_mem.c
+@@ -69,8 +69,8 @@
+ #endif
+ 
+ #if defined(MBEDTLS_PLATFORM_MEMORY) && \
+-   (!defined(MBEDTLS_PLATFORM_FREE_MACRO) || \
+-    !defined(MBEDTLS_PLATFORM_CALLOC_MACRO))
++    !defined(MBEDTLS_PLATFORM_CALLOC_MACRO) && \
++    !defined(MBEDTLS_PLATFORM_STD_CALLOC)
+ #define ALTCP_MBEDTLS_PLATFORM_ALLOC 1
+ #else
+ #define ALTCP_MBEDTLS_PLATFORM_ALLOC 0
+-- 
+2.45.2.windows.1
+
