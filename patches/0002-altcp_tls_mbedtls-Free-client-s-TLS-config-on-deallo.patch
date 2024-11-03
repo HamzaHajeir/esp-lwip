@@ -1,0 +1,52 @@
+From b843b1fddb5c72c8334dade8ecd248fc37cfd3af Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Sat, 24 Jun 2023 20:28:20 +0300
+Subject: [PATCH 02/13] altcp_tls_mbedtls: Free client's TLS config on dealloc
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 4cf89483..99ac8691 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -84,6 +84,7 @@
+ #include "mbedtls/ssl_internal.h" /* to call mbedtls_flush_output after ERR_MEM */
+ 
+ #include <string.h>
++#include <stdbool.h>
+ 
+ #ifndef ALTCP_MBEDTLS_ENTROPY_PTR
+ #define ALTCP_MBEDTLS_ENTROPY_PTR   NULL
+@@ -109,6 +110,7 @@ struct altcp_tls_config {
+   uint8_t pkey_count;
+   uint8_t pkey_max;
+   mbedtls_x509_crt *ca;
++  bool is_server;
+ #if defined(MBEDTLS_SSL_CACHE_C) && ALTCP_MBEDTLS_USE_SESSION_CACHE
+   /** Inter-connection cache for fast connection startup */
+   struct mbedtls_ssl_cache_context cache;
+@@ -871,6 +873,7 @@ altcp_tls_create_config(int is_server, uint8_t cert_count, uint8_t pkey_count, i
+     &conf->ticket_ctx);
+ #endif
+ 
++  conf->is_server = is_server;
+   return conf;
+ }
+ 
+@@ -1340,6 +1343,11 @@ altcp_mbedtls_dealloc(struct altcp_pcb *conn)
+         pbuf_free(state->rx);
+         state->rx = NULL;
+       }
++      /* Only free if it's a client connection. Server connections share the same altcp_tls_config*/
++      struct altcp_tls_config *conf = (struct altcp_tls_config *) state->conf;
++      if (!conf->is_server) {
++        altcp_tls_free_config(conf);
++      }
+       altcp_mbedtls_free(state->conf, state);
+       conn->state = NULL;
+     }
+-- 
+2.45.2.windows.1
+
