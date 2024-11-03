@@ -1,0 +1,27 @@
+From 67fc5f0e91885d90be55f8bd612ede6c25f9fe0c Mon Sep 17 00:00:00 2001
+From: Hamza Hajeir <hahajeir@gmail.com>
+Date: Wed, 10 Jul 2024 19:30:35 +0300
+Subject: [PATCH 13/13] altcp_tls_mbedtls: Fix the return value of
+ altcp_mbdtls_sndbuf when the underlying tcp sndbuf is consumed by ssl
+ expansion bytes.
+
+---
+ src/apps/altcp_tls/altcp_tls_mbedtls.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/src/apps/altcp_tls/altcp_tls_mbedtls.c b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+index 2c786535..5b0db142 100644
+--- a/src/apps/altcp_tls/altcp_tls_mbedtls.c
++++ b/src/apps/altcp_tls/altcp_tls_mbedtls.c
+@@ -1285,6 +1285,8 @@ altcp_mbedtls_sndbuf(struct altcp_pcb *conn)
+           ret = LWIP_MIN(sndbuf - ssl_added, max_len);
+           LWIP_ASSERT("sndbuf overflow", ret <= 0xFFFF);
+           return (u16_t)ret;
++        } else { 
++          return 0;
+         }
+       }
+     }
+-- 
+2.45.2.windows.1
+
